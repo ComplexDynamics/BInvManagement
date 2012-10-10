@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include "command.h"
 
 /*
 * File name: "main.c"
@@ -12,16 +15,49 @@
 
 int DEBUG_MODE = 0;
 
-int main(int argc, char *argv[]) {
-	int i;		
+int validate_operation(struct Command *cmd) {
+	switch(cmd->func) {
+		case FUNC_STATUS:
+			printf("Status OK.\n");
+			return 0;
+		default:
+			fprintf(stderr, "Error: No operation with the ID %d found.\n", cmd->func);
+			return -1;
+	};
+}
 
+void print_usage() {
+	printf("Program usage: bim [flags] [operation] [...]\n");
+	return;
+}
+
+int main(int argc, char *argv[]) {
+	int i;
+	struct Command *cmd = malloc(sizeof(struct Command));		
+
+	// Evalute the commandline arguments
 	for(i = 1; i < argc; i++) {
+
+		// First check for special flags
 		if(!strcmp(argv[i], "-d")) {
 			DEBUG_MODE = 1;
 		}
+
+		// Now check for the sub routine to be executed
+		if(!strcmp(argv[i], "status")) {
+			cmd->func = FUNC_STATUS;
+		}
 	}
 
-	return 0;
+	if(cmd->func == 0)
+		cmd->func = FUNC_UNKNOWN;
+
+	if(DEBUG_MODE)
+		printf("Validating operation...[#%d]\n", cmd->func);
+
+	if(validate_operation(cmd))
+		print_usage();
+		
+
+	return EXIT_SUCCESS;
 }
-
-
