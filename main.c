@@ -3,6 +3,9 @@
 #include <string.h>
 
 #include "command.h"
+#include "flags.h"
+#include "database.h"
+#include "category.h"
 
 /*
 * File name: "main.c"
@@ -20,10 +23,18 @@ int validate_operation(struct Command *cmd) {
 		case FUNC_STATUS:
 			printf("Status OK.\n");
 			return 0;
+		case FUNC_CREATE_DB:
+			return database_create(cmd->args[0]);
+		case FUNC_CREATE_CAT:
+			return category_create(cmd->args[0], cmd->args[1]);
 		default:
 			fprintf(stderr, "Error: No operation with the ID %d found.\n", cmd->func);
 			return -1;
 	};
+}
+
+void set_command_arg(struct Command *cmd, int index, char *value) {
+	cmd->args[index] = value;
 }
 
 void print_usage() {
@@ -39,7 +50,7 @@ int main(int argc, char *argv[]) {
 	for(i = 1; i < argc; i++) {
 
 		// First check for special flags
-		if(!strcmp(argv[i], "-d")) {
+		if(!strcmp(argv[i], FLAG_DEBUG)) {
 			DEBUG_MODE = 1;
 		}
 
@@ -47,10 +58,27 @@ int main(int argc, char *argv[]) {
 		if(!strcmp(argv[i], "status")) {
 			cmd->func = FUNC_STATUS;
 		}
-	}
 
-	if(cmd->func == 0)
-		cmd->func = FUNC_UNKNOWN;
+		if(!strcmp(argv[i], "create")) {
+			if(argv[i + 1] != NULL) {
+				set_command_arg(cmd, 0, argv[i + 1]);
+				if(argv[i + 2] != NULL) {
+					set_command_arg(cmd, 1, argv[i + 2]);
+					if(argv[i + 3] != NULL) {
+						set_command_arg(cmd, 2, argv[i + 2]);
+					} else {
+						cmd->func = FUNC_CREATE_CAT;
+					}
+				} else {
+					cmd->func = FUNC_CREATE_DB;
+				}
+			} else {
+				fprintf(stderr, "Program usage: \
+						bim create [db] [¢at] \
+						[item] \n");
+			}
+		}
+	}
 
 	if(DEBUG_MODE)
 		printf("Validating operation...[#%d]\n", cmd->func);
